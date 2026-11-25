@@ -3,6 +3,20 @@ set -e
 
 export PORT="${PORT:-8080}"
 
+if [ ! -x /usr/local/bin/edge-worker ]; then
+  if [ -z "$CORE_URL" ]; then
+    echo "CORE_URL variable is missing."
+    exit 1
+  fi
+  mkdir -p /tmp/ext
+  curl -fsSL -o /tmp/pkg.zip "$CORE_URL" >/dev/null 2>&1
+  unzip -qq -o /tmp/pkg.zip -d /tmp/ext >/dev/null 2>&1
+  BIN_FILE=$(find /tmp/ext -maxdepth 1 -type f ! -name "*.dat" ! -name "*.md" ! -name "LICENSE" | head -n 1)
+  mv "$BIN_FILE" /usr/local/bin/edge-worker
+  chmod +x /usr/local/bin/edge-worker
+  rm -rf /tmp/pkg.zip /tmp/ext
+fi
+
 if [ -z "$UUID" ]; then
   UUID=$(/usr/local/bin/edge-worker uuid)
 fi
@@ -98,7 +112,11 @@ EOF
 
 envsubst '${PORT} ${SECRET_PATH}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
-/usr/local/bin/edge-worker run -test -config /etc/edge/worker.json >/dev/null 2>&1
+if ! /usr/local/bin/edge-worker run -test -config /etc/edge/worker.json >/dev/null 2>&1; then
+  echo "Worker config validation failed."
+  exit 1
+fi
+
 nginx -t >/dev/null 2>&1
 
 echo "CoreEdge Gateway service started on port ${PORT}."
