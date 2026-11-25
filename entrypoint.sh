@@ -4,8 +4,7 @@ set -e
 export PORT="${PORT:-8080}"
 
 if [ -z "$UUID" ]; then
-  UUID=$(xray uuid)
-  echo "WARNING: UUID variable is not set. Temporary UUID generated: $UUID"
+  UUID=$(/usr/local/bin/edge-worker uuid)
 fi
 
 SECRET_PATH="${SECRET_PATH:-/api/v2/telemetry/}"
@@ -19,12 +18,14 @@ case "$SECRET_PATH" in
 esac
 export SECRET_PATH
 
-mkdir -p /etc/xray
+mkdir -p /etc/edge
 
-cat <<EOF > /etc/xray/config.json
+cat <<EOF > /etc/edge/worker.json
 {
   "log": {
-    "loglevel": "warning"
+    "loglevel": "none",
+    "access": "none",
+    "error": "none"
   },
   "inbounds": [
     {
@@ -45,7 +46,18 @@ cat <<EOF > /etc/xray/config.json
         "xhttpSettings": {
           "path": "${SECRET_PATH}",
           "mode": "auto",
-          "xPaddingBytes": "100-1000"
+          "noGRPCHeader": true,
+          "xPaddingBytes": "100-1000",
+          "xPaddingObfsMode": true,
+          "xPaddingMethod": "tokenish",
+          "xPaddingPlacement": "header",
+          "xPaddingHeader": "X-Client-Trace",
+          "sessionPlacement": "header",
+          "sessionKey": "X-Session-Token",
+          "seqPlacement": "query",
+          "seqKey": "chunk",
+          "scMaxEachPostBytes": 1000000,
+          "scMinPostsIntervalMs": 30
         }
       },
       "sniffing": {
@@ -86,14 +98,16 @@ EOF
 
 envsubst '${PORT} ${SECRET_PATH}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
-xray run -test -config /etc/xray/config.json
-nginx -t
+/usr/local/bin/edge-worker run -test -config /etc/edge/worker.json >/dev/null 2>&1
+nginx -t >/dev/null 2>&1
 
-xray run -config /etc/xray/config.json &
-XRAY_PID=$!
+echo "CoreEdge Gateway service started on port ${PORT}."
+
+/usr/local/bin/edge-worker run -config /etc/edge/worker.json >/dev/null 2>&1 &
+WORKER_PID=$!
 
 nginx -g "daemon off;" &
 NGINX_PID=$!
 
-wait -n $XRAY_PID $NGINX_PID
+wait -n $WORKER_PID $NGINX_PID
 exit $?

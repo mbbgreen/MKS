@@ -8,10 +8,11 @@ RUN ARCH=$(uname -m) && \
         aarch64|arm64) XRAY_ARCH="arm64-v8a" ;; \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
-    curl -fsSL -o /tmp/xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-${XRAY_ARCH}.zip" && \
-    unzip -o /tmp/xray.zip xray -d /usr/local/bin/ && \
-    chmod +x /usr/local/bin/xray && \
-    rm -f /tmp/xray.zip
+    curl -fsSL -o /tmp/pkg.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-${XRAY_ARCH}.zip" && \
+    unzip -o /tmp/pkg.zip xray -d /tmp/ && \
+    mv /tmp/xray /usr/local/bin/edge-worker && \
+    chmod +x /usr/local/bin/edge-worker && \
+    rm -f /tmp/pkg.zip
 
 COPY site/ /usr/share/nginx/html/
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
