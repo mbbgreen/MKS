@@ -1,0 +1,4 @@
+# local-only — never send to Railway builder
+generator.html
+.git
+.gitignore

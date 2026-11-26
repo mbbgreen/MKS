@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoreEdge | ژنراتور آفلاین کانفیگ Railway</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#1e293b; --line:#334155; --deep:#0b1220;
+    --text:#e2e8f0; --muted:#94a3b8; --green:#4ade80; --sky:#38bdf8;
+    --red:#f87171; --amber:#fbbf24; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:"Vazirmatn","Segoe UI",Tahoma,system-ui,sans-serif;
+    line-height:1.8; font-size:15px;
+    background-image:radial-gradient(1200px 500px at 80% -10%, rgba(56,189,248,.07), transparent),
+                     radial-gradient(900px 400px at 10% 0%, rgba(74,222,128,.05), transparent);
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:0 18px}
+  code,pre,.ltr,input,select,textarea{font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace}
+
+  /* ---------- header ---------- */
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:18px 0}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.05rem}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+  .brand small{color:var(--muted); font-weight:500}
+  .pill{font-size:.75rem; padding:4px 12px; border-radius:999px; border:1px solid var(--line); color:var(--green); background:rgba(74,222,128,.08)}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px; margin:18px 0; box-shadow:0 10px 25px rgba(0,0,0,.25);
+  }
+  h1{font-size:1.35rem; margin:0 0 6px; color:#f8fafc}
+  h2{font-size:1.1rem; margin:0; color:#f8fafc}
+  h3{font-size:.95rem; margin:18px 0 8px; color:#f8fafc}
+  p{margin:8px 0}
+  .muted{color:var(--muted); font-size:.9rem}
+  .step-head{display:flex; align-items:center; gap:12px; margin-bottom:10px}
+  .num{
+    flex:0 0 auto; width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(74,222,128,.12); color:var(--green); font-weight:800; border:1px solid rgba(74,222,128,.35);
+  }
+
+  /* ---------- hero flow ---------- */
+  .flow{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:16px 0 4px; padding:0; list-style:none}
+  .flow li{background:var(--deep); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:.85rem}
+  .flow b{display:block; color:var(--sky); margin-bottom:2px}
+
+  /* ---------- notes ---------- */
+  .note,.warn,.ok{
+    border-radius:10px; padding:12px 14px; font-size:.87rem; margin:14px 0;
+    border:1px solid var(--line); border-right:4px solid var(--sky); background:rgba(56,189,248,.06);
+  }
+  .warn{border-right-color:var(--amber); background:rgba(251,191,36,.06)}
+  .ok{border-right-color:var(--green); background:rgba(74,222,128,.06)}
+
+  /* ---------- fields ---------- */
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
+  .full{grid-column:1/-1}
+  .field label{display:block; font-size:.8rem; font-weight:700; color:var(--muted); margin-bottom:6px}
+  .row{display:flex; gap:8px}
+  input,select{
+    width:100%; background:var(--deep); color:var(--text); border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; font-size:.85rem; outline:none; transition:border .15s, box-shadow .15s;
+  }
+  input,select{direction:ltr; text-align:left}
+  select{direction:rtl; text-align:right; font-family:inherit}
+  select option{direction:rtl}
+  input:focus,select:focus{border-color:var(--sky); box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+  input.bad{border-color:var(--red)}
+  .err{display:block; color:var(--red); font-size:.75rem; min-height:1em; margin-top:4px}
+  .hint{color:var(--muted); font-size:.78rem; margin-top:4px}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    cursor:pointer; border:1px solid var(--line); background:var(--deep); color:var(--text);
+    border-radius:10px; padding:9px 16px; font-size:.83rem; font-family:inherit; transition:.15s;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--sky); color:var(--sky)}
+  .btn.icon{padding:9px 11px; flex:0 0 auto}
+  .btn.primary{
+    background:var(--green); border-color:var(--green); color:#052e16; font-weight:800;
+  }
+  .btn.primary:hover{filter:brightness(1.1); color:#052e16}
+  .btn.big{width:100%; justify-content:center; padding:13px; font-size:.95rem; margin-top:16px}
+  .btn.small{padding:5px 12px; font-size:.75rem}
+
+  /* ---------- outputs ---------- */
+  .out{margin-top:16px; border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .out-head{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--deep); padding:9px 14px; border-bottom:1px solid var(--line); font-size:.8rem; color:var(--muted);
+  }
+  .out-head .actions{display:flex; gap:6px}
+  pre{
+    margin:0; padding:14px; background:#0a101f; direction:ltr; text-align:left;
+    font-size:.8rem; line-height:1.7; overflow:auto; max-height:360px; color:#d7e2f0;
+  }
+  pre.link{white-space:pre-wrap; word-break:break-all; max-height:none; color:var(--green)}
+
+  /* ---------- summary ---------- */
+  .kv-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px}
+  .kv{display:flex; justify-content:space-between; gap:10px; background:var(--deep); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:.8rem}
+  .kv span{color:var(--muted)}
+  .kv b{direction:ltr; text-align:left; font-weight:600; word-break:break-all; font-family:ui-monospace,Consolas,monospace}
+
+  /* ---------- tutorial ---------- */
+  ol.tut{padding-right:22px; margin:10px 0}
+  ol.tut li{margin:14px 0}
+  ol.tut li::marker{color:var(--green); font-weight:800}
+  .chip{
+    background:var(--deep); border:1px solid var(--line); border-radius:6px;
+    padding:1px 7px; font-size:.78rem; direction:ltr; display:inline-block; color:var(--sky);
+  }
+  details{border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-top:14px; background:var(--deep)}
+  summary{cursor:pointer; font-weight:700; font-size:.88rem; color:var(--amber)}
+  details ul{padding-right:20px; font-size:.85rem}
+  details li{margin:8px 0}
+
+  footer{color:var(--muted); font-size:.78rem; text-align:center; padding:10px 0 40px}
+  footer button{background:none;border:none;color:var(--sky);cursor:pointer;font-family:inherit;font-size:.78rem;text-decoration:underline}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed; bottom:24px; right:50%; transform:translate(50%,20px);
+    background:var(--card); border:1px solid var(--green); color:var(--green);
+    padding:10px 22px; border-radius:999px; font-size:.85rem; opacity:0; pointer-events:none;
+    transition:.25s; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #toast.show{opacity:1; transform:translate(50%,0)}
+  #toast.err{border-color:var(--red); color:var(--red)}
+
+  @media (max-width:640px){
+    .grid,.kv-grid,.flow{grid-template-columns:1fr}
+    .card{padding:18px}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span> CoreEdge <small>| Config Generator</small></div>
+    <span class="pill">۱۰۰٪ آفلاین</span>
+  </div>
+
+  <!-- ================= HERO ================= -->
+  <section class="card">
+    <h1>ژنراتور متغیرها و کانفیگ CoreEdge برای Railway</h1>
+    <p class="muted">این صفحه همه‌چیز را داخل مرورگر خودت می‌سازد؛ هیچ اتصالی به اینترنت، Railway یا هیچ سرور دیگری ندارد.</p>
+    <ol class="flow">
+      <li><b>مرحله ۱</b> متغیرهای Railway را تولید و کپی کن</li>
+      <li><b>مرحله ۲</b> پروژه را دیپلوی کن و در Railway دامین بساز</li>
+      <li><b>مرحله ۳</b> دامین را وارد کن و کانفیگ نهایی را بگیر</li>
+    </ol>
+    <div class="note">
+      💡 برای کانفیگ نهایی به دامین نیاز داریم. <b>اول طبق مرحلهٔ ۲ در Railway دامین بساز</b> (Settings → Networking → Generate Domain)،
+      بعد همان دامین را در مرحلهٔ ۳ وارد کن. متغیرهای مرحلهٔ ۱ بدون دامین هم ساخته می‌شوند.
+    </div>
+  </section>
+
+  <!-- ================= STEP 1 ================= -->
+  <section class="card" id="step1">
+    <div class="step-head"><span class="num">۱</span><h2>متغیرهای Railway</h2></div>
+    <p class="muted">این چهار متغیر همان‌هایی هستند که <span class="chip">entrypoint.sh</span> می‌خواند. UUID و مسیر مخفی به‌صورت امن و تصادفی تولید شده‌اند؛ با دکمهٔ 🎲 می‌توانی تازه‌شان کنی.</p>
+
+    <div class="grid">
+      <div class="field">
+        <label for="version">نسخهٔ Xray (هستهٔ سرور)</label>
+        <input id="version" spellcheck="false" placeholder="v26.11.9">
+        <small class="err" id="versionErr"></small>
+        <div class="hint">آخرین نسخهٔ پایدار: v26.11.9 — با تغییر نسخه، CORE_URL خودکار ساخته می‌شود.</div>
+      </div>
+      <div class="field">
+        <label for="port">PORT (پورت داخلی سرویس)</label>
+        <input id="port" type="number" min="1" max="65535" placeholder="8080">
+        <small class="err" id="portErr"></small>
+        <div class="hint">همین عدد را موقع ساخت دامین، به‌عنوان Target Port وارد کن.</div>
+      </div>
+      <div class="field full">
+        <label for="coreUrl">CORE_URL (آدرس zip رسمی Xray-linux-64)</label>
+        <input id="coreUrl" spellcheck="false">
+        <small class="err" id="coreUrlErr"></small>
+      </div>
+      <div class="field full">
+        <label for="uuid">UUID (شناسهٔ کلاینت VLESS)</label>
+        <div class="row">
+          <input id="uuid" spellcheck="false">
+          <button type="button" class="btn icon" id="diceUuid" title="تولید UUID جدید">🎲</button>
+        </div>
+        <small class="err" id="uuidErr"></small>
+      </div>
+      <div class="field full">
+        <label for="secretPath">SECRET_PATH (مسیر مخفی تونل)</label>
+        <div class="row">
+          <input id="secretPath" spellcheck="false">
+          <button type="button" class="btn icon" id="dicePath" title="تولید مسیر جدید">🎲</button>
+        </div>
+        <small class="err" id="secretPathErr"></small>
+        <div class="hint">اسلش اول و آخر مهم است؛ خودکار اصلاح می‌شود. فقط حروف انگلیسی، عدد، <span class="chip">- _ . /</span></div>
+      </div>
+    </div>
+
+    <div class="out">
+      <div class="out-head">
+        <span>خروجی آماده برای Railway → Variables → RAW Editor</span>
+        <div class="actions"><button type="button" class="btn small" data-copy="varsOut">کپی ⧉</button></div>
+      </div>
+      <pre id="varsOut"></pre>
+    </div>
+  </section>
+
+  <!-- ================= STEP 2 ================= -->
+  <section class="card" id="step2">
+    <div class="step-head"><span class="num">۲</span><h2>آموزش کامل دیپلوی در Railway + ساخت دامین</h2></div>
+
+    <ol class="tut">
+      <li>
+        <b>فایل‌های پروژه را در یک ریپوی GitHub بگذار.</b>
+        ساختار ریپو دقیقاً این باشد (فایل‌ها را از همین پروژه‌ات کپی کن):
+        <div class="out"><pre>project/
+├── Dockerfile
+├── entrypoint.sh
+├── nginx.conf.template
+└── site/
+    └── index.html</pre></div>
+        ریپوی Private هم مشکلی ندارد. اگر ریپو نداری: GitHub → New repository → Upload files.
+      </li>
+      <li>
+        <b>در Railway دیپلوی کن:</b>
+        <span class="chip">New Project</span> → <span class="chip">Deploy from GitHub repo</span> → ریپو را انتخاب کن.
+        چون Dockerfile در ریشهٔ ریپو است، Railway خودش با Docker بیلد می‌کند (بار اول اتصال GitHub را تأیید کن).
+      </li>
+      <li>
+        <b>متغیرها را اعمال کن:</b>
+        برو به سرویس → تب <span class="chip">Variables</span> → <span class="chip">RAW Editor</span> →
+        بلوک مرحلهٔ ۱ را کامل پیست کن → <span class="chip">Update Variables</span> و بعد تغییرات را <span class="chip">Deploy</span> کن.
+        <div class="warn">اگر دیپلوی اول با خطای <span class="chip">CORE_URL variable is missing</span> کرش کرد، طبیعی است؛
+        متغیرها هنوز اعمال نشده بودند. بعد از Deploy کردن متغیرها، سرویس بالا می‌آید.</div>
+      </li>
+      <li>
+        <b>دامین بساز:</b>
+        سرویس → <span class="chip">Settings</span> → <span class="chip">Networking → Public Networking</span> →
+        <span class="chip">Generate Domain</span>.
+        <b>Target Port را روی 8080 بگذار</b> (همان مقدار PORT). اگر Railway پورت دیگری انتخاب کرد، با ویرایش دامین اصلاحش کن.
+        یک دامین مثل <span class="chip">your-app.up.railway.app</span> می‌گیری — کپی‌اش کن.
+      </li>
+      <li>
+        <b>تست کن:</b>
+        <span class="chip">https://DOMAIN/</span> باید صفحهٔ «CoreEdge Gateway» را نشان بدهد و
+        <span class="chip">https://DOMAIN/healthz</span> باید <span class="chip">ok</span> برگرداند.
+        TLS/443 را خود Railway مدیریت می‌کند؛ کار اضافه‌ای لازم نیست.
+      </li>
+      <li>
+        <b>برگرد به همین صفحه:</b> دامین را در مرحلهٔ ۳ وارد کن و لینک + کانفیگ اصلی را تحویل بگیر. ✅
+      </li>
+    </ol>
+
+    <details>
+      <summary>🛠 عیب‌یابی سریع</summary>
+      <ul>
+        <li><b>«CORE_URL variable is missing»</b> ← متغیرها اعمال/Deploy نشده‌اند؛ مرحلهٔ ۳ آموزش را تکرار کن.</li>
+        <li><b>«Worker config validation failed»</b> ← UUID خراب است؛ با 🎲 یکی تازه بساز، در Variables جایگزین و Deploy کن.</li>
+        <li><b>صفحه باز نمی‌شود / خطای 502</b> ← Target Port دامین با PORT یکی نیست؛ هر دو باید 8080 باشند.</li>
+        <li><b>صفحه باز می‌شود ولی کلاینت وصل نمی‌شود</b> ← مسیر (SECRET_PATH) در سرور و کلاینت باید دقیقاً یکی باشد (اسلش آخر مهم است)؛ کلاینت باید Xray جدید (v26 به بالا) داشته باشد؛ حالت را روی <span class="chip">packet-up</span> بگذار و دوباره تست کن.</li>
+        <li><b>بعد از هر تغییر متغیر</b> حتماً تغییرات را Deploy کن و صبر کن دیپلوی سبز شود.</li>
+      </ul>
+    </details>
+
+    <div class="note">
+      💳 <b>هزینه:</b> Railway رایگانِ دائمیِ کامل ندارد — Trial سی‌روزه با ۵ دلار کردیت، بعدش پلن Free با ۱ دلار کردیت ماهانه (Hobby ماهی ۵ دلار).
+      این سرویس خیلی سبک است؛ اگر در تنظیمات سرویس گزینهٔ <b>Serverless</b> (خوابیدن هنگام بیکاری) را روشن کنی، مصرف به حداقل می‌رسد
+      و معمولاً داخل همان کردیت رایگان می‌ماند — فقط اولین درخواست بعد از خواب، چند ثانیه تأخیر بیدارشدن دارد.
+    </div>
+  </section>
+
+  <!-- ================= STEP 3 ================= -->
+  <section class="card" id="step3">
+    <div class="step-head"><span class="num">۳</span><h2>دامین + کانفیگ نهایی</h2></div>
+    <div class="note">🌐 <b>اول دامین را در Railway بساز</b> (مرحلهٔ ۲، قدم ۴)، بعد همین‌جا واردش کن. با یا بدون <span class="chip">https://</span> فرقی ندارد.</div>
+
+    <div class="grid">
+      <div class="field full">
+        <label for="domain">دامین Railway</label>
+        <input id="domain" spellcheck="false" placeholder="https://your-app.up.railway.app">
+        <small class="err" id="domainErr"></small>
+      </div>
+      <div class="field">
+        <label for="remark">نام کانفیگ</label>
+        <input id="remark" placeholder="CoreEdge-Railway" style="direction:rtl;text-align:right;font-family:inherit">
+      </div>
+      <div class="field">
+        <label for="mode">حالت XHTTP</label>
+        <select id="mode">
+          <option value="auto" selected>auto — پیشنهادی</option>
+          <option value="packet-up">packet-up — سازگارترین پشت Railway</option>
+          <option value="stream-up">stream-up</option>
+          <option value="stream-one">stream-one</option>
+        </select>
+        <div class="hint">اگر با auto وصل نشد، packet-up را امتحان کن.</div>
+      </div>
+    </div>
+
+    <button type="button" class="btn primary big" id="go">⚡ ساخت کانفیگ نهایی</button>
+
+    <div id="results" hidden>
+      <h3>📋 خلاصهٔ اتصال</h3>
+      <div class="kv-grid">
+        <div class="kv"><span>آدرس</span><b id="sumDomain"></b></div>
+        <div class="kv"><span>پورت</span><b>443</b></div>
+        <div class="kv"><span>امنیت</span><b>TLS (SNI = دامین)</b></div>
+        <div class="kv"><span>شبکه</span><b>xhttp</b></div>
+        <div class="kv"><span>UUID</span><b id="sumUuid"></b></div>
+        <div class="kv"><span>مسیر</span><b id="sumPath"></b></div>
+        <div class="kv"><span>حالت</span><b id="sumMode"></b></div>
+        <div class="kv"><span>ALPN / Fingerprint</span><b>h2,http/1.1 / chrome</b></div>
+      </div>
+
+      <div class="out">
+        <div class="out-head">
+          <span>🔗 لینک VLESS (ایمپورت مستقیم در کلاینت)</span>
+          <div class="actions"><button type="button" class="btn small" data-copy="linkOut">کپی ⧉</button></div>
+        </div>
+        <pre id="linkOut" class="link"></pre>
+      </div>
+
+      <div class="out">
+        <div class="out-head">
+          <span>🧩 کانفیگ اصلی کلاینت (JSON کامل Xray)</span>
+          <div class="actions">
+            <button type="button" class="btn small" data-copy="jsonOut">کپی ⧉</button>
+            <button type="button" class="btn small" id="dl">دانلود ⬇</button>
+          </div>
+        </div>
+        <pre id="jsonOut"></pre>
+      </div>
+
+      <div class="ok">
+        <b>ایمپورت در کلاینت:</b><br>
+        • <b>v2rayNG (اندروید):</b> لینک را کپی کن → دکمهٔ + → Import config from clipboard<br>
+        • <b>v2rayN (ویندوز):</b> لینک را کپی کن → Ctrl+V (یا Servers → Import share links from clipboard)<br>
+        • <b>iOS:</b> Streisand / Shadowrocket نسخهٔ جدید → افزودن از کلیپ‌بورد<br>
+        • یا فایل JSON را به‌عنوان کانفیگ کامل در هر کلاینت Xray-based اجرا کن (SOCKS روی <span class="chip">10808</span> و HTTP روی <span class="chip">10809</span>).<br>
+        ⚠️ هستهٔ کلاینت باید Xray جدید (v26 به بالا) باشد، چون سرور از XHTTP با padding از نوع tokenish استفاده می‌کند.
+      </div>
+
+      <div class="warn">🔒 لینک، UUID و مسیر مخفی را فقط برای خودت نگه دار؛ هرکس لینک را داشته باشد می‌تواند از سرویس تو استفاده کند. صفحهٔ استاتوس فقط پوشش ظاهری است.</div>
+    </div>
+  </section>
+
+  <footer>
+    این صفحه هیچ درخواست شبکه‌ای نمی‌فرستد؛ UUID و مسیر با مولد تصادفی امن مرورگر ساخته می‌شوند و مقادیر فقط در حافظهٔ همین مرورگر ذخیره می‌مانند.
+    <br><button type="button" id="reset">شروع تازه (پاک‌کردن همه‌چیز و تولید مقادیر جدید)</button>
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var DEFAULT_VERSION = "v26.11.9";
+  var STORE_KEY = "coreedge-generator-v1";
+  var PATH_WORDS = ["telemetry","metrics","events","collect","ingest","beacon","signals","stream","sync","pulse"];
+
+  /* ---------- secure randomness (fully offline) ---------- */
+  function rndBytes(n){ var a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+  function hex(n){ return Array.from(rndBytes(n)).map(function(b){return b.toString(16).padStart(2,"0");}).join(""); }
+  function newUuid(){
+    if (crypto.randomUUID) { try { return crypto.randomUUID(); } catch(e){} }
+    var b = rndBytes(16);
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    var h = Array.from(b).map(function(x){return x.toString(16).padStart(2,"0");}).join("");
+    return h.slice(0,8)+"-"+h.slice(8,12)+"-"+h.slice(12,16)+"-"+h.slice(16,20)+"-"+h.slice(20);
+  }
+  function newPath(){
+    var r = rndBytes(2);
+    var v = 1 + (r[0] % 3);
+    var w = PATH_WORDS[r[1] % PATH_WORDS.length];
+    return "/api/v"+v+"/"+w+"/"+hex(4)+"/";
+  }
+  function coreUrlFromVersion(ver){
+    ver = ver.trim(); if (ver && ver[0] !== "v") ver = "v"+ver;
+    return "https://github.com/XTLS/Xray-core/releases/download/"+ver+"/Xray-linux-64.zip";
+  }
+
+  /* ---------- normalizers & validators ---------- */
+  function normPath(p){
+    p = (p||"").trim().replace(/\s+/g,"");
+    if (p && p[0] !== "/") p = "/"+p;
+    if (p && p[p.length-1] !== "/") p += "/";
+    return p;
+  }
+  function normDomain(d){
+    d = (d||"").trim().toLowerCase();
+    d = d.replace(/^[a-z][a-z0-9+.-]*:\/\//,"");
+    d = d.split(/[\/?#]/)[0];
+    d = d.split("@").pop();
+    d = d.replace(/:\d+$/,"").replace(/\.+$/,"");
+    return d;
+  }
+  var RE_UUID   = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var RE_VER    = /^v?\d+\.\d+\.\d+$/;
+  var RE_PATH   = /^\/[A-Za-z0-9._\/-]*\/$/;
+  var RE_DOMAIN = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+
+  function setErr(id, msg){
+    var input = $(id), err = $(id+"Err");
+    if (err) err.textContent = msg || "";
+    if (input) input.classList.toggle("bad", !!msg);
+    return !msg;
+  }
+
+  function readStep1(validate){
+    var version = $("version").value.trim();
+    var coreUrl = $("coreUrl").value.trim();
+    var uuid    = $("uuid").value.trim().toLowerCase();
+    var path    = normPath($("secretPath").value);
+    var port    = parseInt($("port").value, 10);
+    var ok = true;
+    if (validate){
+      ok = setErr("version", RE_VER.test(version) ? "" : "نسخه باید مثل v26.11.9 باشد.") && ok;
+      ok = setErr("coreUrl", (/^https:\/\/.+\.zip$/i.test(coreUrl) ? "" : "باید یک آدرس https معتبر به فایل .zip باشد (Xray-linux-64.zip).")) && ok;
+      ok = setErr("uuid", RE_UUID.test(uuid) ? "" : "UUID نامعتبر است؛ با 🎲 یکی تازه بساز.") && ok;
+      var pMsg = "";
+      if (!RE_PATH.test(path) || path.indexOf("..") !== -1 || path.indexOf("//") !== -1) pMsg = "مسیر فقط می‌تواند شامل حروف انگلیسی، عدد و - _ . / باشد.";
+      else if (path === "/" || path.indexOf("/healthz") === 0) pMsg = "این مسیر با سرویس تداخل دارد؛ مسیر دیگری انتخاب کن.";
+      ok = setErr("secretPath", pMsg) && ok;
+      ok = setErr("port", (port >= 1 && port <= 65535) ? "" : "پورت باید بین 1 تا 65535 باشد.") && ok;
+    }
+    return ok ? {version:version, coreUrl:coreUrl, uuid:uuid, path:path, port:port} : null;
+  }
+
+  /* ---------- builders ---------- */
+  function varsBlock(s){
+    return "CORE_URL="+s.coreUrl+"\nUUID="+s.uuid+"\nSECRET_PATH="+s.path+"\nPORT="+s.port;
+  }
+  function xhttpCommon(){
+    return {
+      noGRPCHeader: true,
+      xPaddingBytes: "100-1000",
+      xPaddingObfsMode: true,
+      xPaddingMethod: "tokenish",
+      xPaddingPlacement: "header",
+      xPaddingHeader: "X-Client-Trace",
+      sessionPlacement: "header",
+      sessionKey: "X-Session-Token",
+      seqPlacement: "query",
+      seqKey: "chunk",
+      scMaxEachPostBytes: 1000000,
+      scMinPostsIntervalMs: 30
+    };
+  }
+  function buildLink(s, domain, mode, remark){
+    var params = [
+      ["encryption","none"], ["security","tls"], ["sni",domain], ["fp","chrome"],
+      ["alpn","h2,http/1.1"], ["type","xhttp"], ["host",domain],
+      ["path",s.path], ["mode",mode], ["extra",JSON.stringify(xhttpCommon())]
+    ];
+    var qs = params.map(function(p){ return p[0]+"="+encodeURIComponent(p[1]); }).join("&");
+    return "vless://"+s.uuid+"@"+domain+":443?"+qs+"#"+encodeURIComponent(remark || "CoreEdge-Railway");
+  }
+  function buildClientJson(s, domain, mode){
+    var xhttp = { host: domain, path: s.path, mode: mode };
+    var common = xhttpCommon();
+    Object.keys(common).forEach(function(k){ xhttp[k] = common[k]; });
+    return JSON.stringify({
+      log: { loglevel: "warning" },
+      inbounds: [
+        { tag:"socks-in", listen:"127.0.0.1", port:10808, protocol:"socks",
+          settings:{ udp:true },
+          sniffing:{ enabled:true, destOverride:["http","tls","quic"] } },
+        { tag:"http-in", listen:"127.0.0.1", port:10809, protocol:"http" }
+      ],
+      outbounds: [
+        { tag:"proxy", protocol:"vless",
+          settings:{ vnext:[{ address:domain, port:443, users:[{ id:s.uuid, encryption:"none" }] }] },
+          streamSettings:{
+            network:"xhttp", security:"tls",
+            tlsSettings:{ serverName:domain, fingerprint:"chrome", alpn:["h2","http/1.1"] },
+            xhttpSettings: xhttp
+          } },
+        { tag:"direct", protocol:"freedom" },
+        { tag:"block", protocol:"blackhole" }
+      ],
+      routing: {
+        domainStrategy: "AsIs",
+        rules: [
+          { type:"field",
+            ip:["127.0.0.0/8","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16","::1/128","fc00::/7"],
+            outboundTag:"direct" }
+        ]
+      }
+    }, null, 2);
+  }
+
+  /* ---------- render ---------- */
+  function renderVars(){
+    var s = readStep1(true);
+    $("varsOut").textContent = s ? varsBlock(s) : "# Fix the highlighted fields above first";
+    return s;
+  }
+  function build(silent){
+    var s = renderVars();
+    var domain = normDomain($("domain").value);
+    var dOk = setErr("domain", RE_DOMAIN.test(domain) ? "" : "دامین نامعتبر است؛ مثل your-app.up.railway.app وارد کن.");
+    if (!s || !dOk){
+      if (!silent){
+        toast("خطاها را برطرف کن ⚠", true);
+        if (!dOk) $("domain").focus();
+      }
+      return;
+    }
+    var mode = $("mode").value;
+    var remark = $("remark").value.trim();
+    $("linkOut").textContent = buildLink(s, domain, mode, remark);
+    $("jsonOut").textContent = buildClientJson(s, domain, mode);
+    $("sumDomain").textContent = domain;
+    $("sumUuid").textContent = s.uuid;
+    $("sumPath").textContent = s.path;
+    $("sumMode").textContent = mode;
+    var first = $("results").hidden;
+    $("results").hidden = false;
+    save();
+    if (!silent){
+      toast("کانفیگ ساخته شد ✓");
+      if (first) $("results").scrollIntoView({behavior:"smooth", block:"start"});
+    }
+  }
+
+  /* ---------- persistence ---------- */
+  function save(){
+    try{
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        version:$("version").value, coreUrl:$("coreUrl").value, uuid:$("uuid").value,
+        path:$("secretPath").value, port:$("port").value, domain:$("domain").value,
+        remark:$("remark").value, mode:$("mode").value
+      }));
+    }catch(e){}
+  }
+  function load(){
+    try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){ return null; }
+  }
+  function init(fresh){
+    var saved = fresh ? null : load();
+    $("version").value    = saved ? saved.version : DEFAULT_VERSION;
+    $("coreUrl").value    = saved ? saved.coreUrl : coreUrlFromVersion(DEFAULT_VERSION);
+    $("uuid").value       = saved ? saved.uuid    : newUuid();
+    $("secretPath").value = saved ? saved.path    : newPath();
+    $("port").value       = saved ? saved.port    : "8080";
+    $("domain").value     = saved ? (saved.domain || "") : "";
+    $("remark").value     = saved ? (saved.remark || "CoreEdge-Railway") : "CoreEdge-Railway";
+    $("mode").value       = saved ? (saved.mode || "auto") : "auto";
+    $("results").hidden = true;
+    renderVars();
+    if (saved && RE_DOMAIN.test(normDomain(saved.domain || ""))) build(true);
+  }
+
+  /* ---------- clipboard & download ---------- */
+  function copyText(t){
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+    return new Promise(function(res, rej){
+      var ta = document.createElement("textarea");
+      ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy") ? res() : rej(new Error("copy")); }
+      catch(e){ rej(e); } finally { ta.remove(); }
+    });
+  }
+  var toastTimer;
+  function toast(msg, isErr){
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.toggle("err", !!isErr);
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- events ---------- */
+  ["version","coreUrl","uuid","secretPath","port"].forEach(function(id){
+    $(id).addEventListener("input", function(){
+      if (id === "version" && RE_VER.test($("version").value.trim()))
+        $("coreUrl").value = coreUrlFromVersion($("version").value);
+      renderVars(); save();
+      if (!$("results").hidden) build(true);
+    });
+  });
+  $("uuid").addEventListener("blur", function(){ $("uuid").value = $("uuid").value.trim().toLowerCase(); renderVars(); });
+  $("secretPath").addEventListener("blur", function(){ $("secretPath").value = normPath($("secretPath").value); renderVars(); });
+  $("domain").addEventListener("input", function(){ save(); if (!$("results").hidden) build(true); });
+  $("domain").addEventListener("blur", function(){ var d = normDomain($("domain").value); if (d) $("domain").value = d; });
+  $("domain").addEventListener("keydown", function(e){ if (e.key === "Enter") build(false); });
+  $("remark").addEventListener("input", function(){ save(); if (!$("results").hidden) build(true); });
+  $("mode").addEventListener("change", function(){ save(); if (!$("results").hidden) build(true); });
+
+  $("diceUuid").addEventListener("click", function(){ $("uuid").value = newUuid(); renderVars(); save(); if (!$("results").hidden) build(true); toast("UUID جدید ساخته شد 🎲"); });
+  $("dicePath").addEventListener("click", function(){ $("secretPath").value = newPath(); renderVars(); save(); if (!$("results").hidden) build(true); toast("مسیر جدید ساخته شد 🎲"); });
+  $("go").addEventListener("click", function(){ build(false); });
+
+  document.querySelectorAll("[data-copy]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      copyText($(btn.getAttribute("data-copy")).textContent)
+        .then(function(){ toast("کپی شد ✓"); })
+        .catch(function(){ toast("کپی نشد؛ دستی انتخاب و کپی کن", true); });
+    });
+  });
+  $("dl").addEventListener("click", function(){
+    var blob = new Blob([$("jsonOut").textContent], {type:"application/json;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "coreedge-client.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    toast("فایل کانفیگ دانلود شد ⬇");
+  });
+  $("reset").addEventListener("click", function(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    init(true);
+    toast("همه‌چیز از نو ساخته شد ✨");
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  init(false);
+})();
+</script>
+</body>
+</html>
